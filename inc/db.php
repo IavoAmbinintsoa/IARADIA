@@ -174,7 +174,26 @@ function getSeatsForVoyage(int $voyageId, string $coms): array {
     return $stmt->fetchAll() ?: [];
 }
 
-function getIntermidiateTrajet($id_Voyage){
+function getIntermidiateTrajet(int $id_Voyage): array {
+    $pdo = getPDO();
     
-}
+    $sql = "SELECT 
+                t_enfant.id_Trajet,
+                v_dep.nom_Ville AS ville_depart,
+                v_arr.nom_Ville AS ville_arrivee,
+                ct.ordre_segment,
+                ts.prix_Tarif_segment
+            FROM Voyage v
+            JOIN Composition_Trajet ct ON v.id_Trajet = ct.id_parent
+            JOIN Trajet t_enfant ON ct.id_enfant = t_enfant.id_Trajet
+            JOIN Ville v_dep ON t_enfant.id_Ville_depart = v_dep.id_Ville
+            JOIN Ville v_arr ON t_enfant.id_Ville_arrivee = v_arr.id_Ville
+            LEFT JOIN Tarif_segment ts ON t_enfant.id_Trajet = ts.id_Trajet
+            WHERE v.id_Voyage = :idVoyage
+            ORDER BY ct.ordre_segment ASC";
 
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['idVoyage' => $id_Voyage]);
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}

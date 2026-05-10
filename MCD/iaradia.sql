@@ -278,7 +278,14 @@ CREATE TABLE `Vehicule` (
 --
 -- Table structure for table `Ville`
 --
-
+CREATE TABLE Composition_Trajet (
+    `id_parent` bigint(20) NOT NULL, -- ex: id de "Tana-Toliara"
+    `id_enfant` bigint(20) NOT NULL, -- ex: id de "Antsirabe-Fianara"
+    `ordre_segment` int(11) NOT NULL,
+    PRIMARY KEY (`id_parent`, `id_enfant`),
+    FOREIGN KEY (`id_parent`) REFERENCES Trajet(`id_trajet`),
+    FOREIGN KEY (`id_enfant`) REFERENCES Trajet(`id_trajet`)
+);
 DROP TABLE IF EXISTS `Ville`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
