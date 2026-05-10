@@ -38,7 +38,7 @@ function getVoyages($from = null, $to = null): array {
     $pdo = getPDO();
     $sql = 'SELECT v.id_Voyage, v.date_depart_Voyage, v.status_Voyage, 
                    v.immatriculation_Vehicule, t.distance_km_Trajet,
-                   v1.nom_Ville as from_city, v2.nom_Ville as to_city
+                   v1.nom_Ville as from_city, v2.nom_Ville as to_city , t.id_Trajet as id_Trajet
             FROM Voyage v
             JOIN Trajet t ON v.id_Trajet = t.id_Trajet
             JOIN Ville v1 ON t.id_Ville_depart = v1.id_Ville
@@ -172,5 +172,9 @@ function getSeatsForVoyage(int $voyageId, string $coms): array {
     );
     $stmt->execute(['voyageId' => $voyageId, 'coms' => $coms]);
     return $stmt->fetchAll() ?: [];
+}
+
+function getIntermidiateTrajet($id_Voyage){
+    
 }
 
