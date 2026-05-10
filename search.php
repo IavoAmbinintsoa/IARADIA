@@ -7,23 +7,19 @@ $to         = sanitize(trim($_GET['to']         ?? ''));
 $date       = sanitize(trim($_GET['date']       ?? ''));
 $passengers = max(1, min(8, (int)($_GET['passengers'] ?? 1)));
 
-$results = [];
-if ($from && $to) {
-    $results = searchVoyages($from, $to, $date ?: null);
-}else {
-  $results = getVoyages();
-}
+$results = searchVoyages("Antananarivo","Soavinandriana",null);
+/* echo '<pre>';
+print("from " . $from . "\n");
+print("to " . $to . "\n");
+var_dump($results);
+echo '</pre>';
+die(); */
 
-function getVoyageStats(array $voyage): array {
-    $taken = count(getSeatsForVoyage((int)$voyage['id_Voyage']));
-    $cap   = 32; // 32 places sprinter par defaut
-    $libre = max(0, $cap - $taken);
-    return ['libre' => $libre, 'total' => $cap, 'taken' => $taken];
-}
+
+
 
 include __DIR__ . '/templates/header.php';
 ?>
-
 <div class="min-h-screen py-12" style="background:var(--color-navy)">
   <div class="max-w-4xl mx-auto px-6">
 
@@ -40,19 +36,20 @@ include __DIR__ . '/templates/header.php';
       <?php endif; ?>
     </div>
 
-    <?php if ($results): ?>
+    <?php if (count($results) > 0): ?>
     <?php
-      $disponible = count(array_filter($results, function($v){ $s = getVoyageStats($v); return $s['libre'] > 5; }));
-      $prices = array_map(function($v){ $t = getTarifForVoyage((int)$v['id_Voyage']); return $t ? (float)$t['prix_Tarif_segment'] : 0; }, $results);
-      $minPrice = $prices ? min(array_filter($prices)) : 0;
+      $nombreDispo = count($results);
     ?>
 
     <!-- Resultat -->
     <div class="flex flex-col gap-2.5" id="results-list">
-      <?php foreach ($results as $v):
+      <?php 
+      foreach ($results as $v):
         $tarif  = getTarifForVoyage((int)$v['id_Voyage']);
         $price  = $tarif ? (float)$tarif['prix_Tarif_segment'] : 0;
         $st     = getVoyageStats($v);
+        // debug($st); 
+
         $libre  = $st['libre'];
         $total  = $st['total'];
         $taken  = $st['taken'];
@@ -60,21 +57,23 @@ include __DIR__ . '/templates/header.php';
         $heure  = date('H:i', strtotime($v['date_depart_Voyage']));
         $dateD  = date('Y-m-d', strtotime($v['date_depart_Voyage']));
 
-        if ($libre === 0)       $statusLabel = 'Complet';
-        elseif ($libre <= 5)    $statusLabel = 'Presque complet';
-        else                    $statusLabel = 'Disponible';
+        if ($libre === 0)       $detailVoyage = 'Complet';
+        elseif ($libre <= 5)    $detailVoyage = 'Presque complet';
+        else                    $detailVoyage = 'Disponible';
 
         $statusColors = [
           'Complet'        => ['color'=>'#E24B4A'],
           'Presque complet'=> ['color'=>'#EFA826'],
           'Disponible'     => ['color'=>'#1DA06E'],
         ];
-        $sc = $statusColors[$statusLabel];
+        $sc = $statusColors[$detailVoyage];
         $barColor = $pct >= 100 ? '#E24B4A' : ($pct >= 80 ? '#EFA826' : '#1DA06E');
-        $isFull = $libre === 0;
+        $isFull = false;
+        if($libre <= 0)$isFull = true;
+
       ?>
       <div class="voyage-card flex flex-col md:flex-row md:items-center gap-5 p-5 transition-all duration-200 "
-           data-status="<?= $statusLabel ?>"
+           data-status="<?= $detailVoyage ?>"
            style="background:rgba(245,241,235,0.04);<?= $isFull ? 'opacity:0.45' : '' ?>">
 
         <div class="flex-shrink-0 text-center min-w-[52px]">
@@ -84,7 +83,7 @@ include __DIR__ . '/templates/header.php';
 
         <div class="w-px h-10 hidden md:block flex-shrink-0" style="background:rgba(245,241,235,0.08)"></div>
 
-        <!-- tana makany toliara -->
+        <!-- A -> B  -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-2">
             <span class="text-sm font-medium" style="color:var(--color-ivory)"><?= sanitize($v['from_city']) ?></span>
@@ -98,7 +97,7 @@ include __DIR__ . '/templates/header.php';
         <!-- statut -->
         <span class="self-start md:self-center px-3 py-1 rounded-full text-xs font-medium flex-shrink-0"
               style="color:<?= $sc['color'] ?>;">
-          <?= $statusLabel ?>
+          <?= $detailVoyage ?>
         </span>
 
         <!-- Prix -->

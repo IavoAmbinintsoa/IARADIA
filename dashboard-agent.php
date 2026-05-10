@@ -29,12 +29,9 @@ include __DIR__ . '/templates/header.php';
 ?>
 
 <style>
-  /* Classes de raccourci pour les couleurs */
   .txt-ivory { color: var(--color-ivory); }
   .txt-gold { color: var(--color-gold); }
   .txt-dim { color: rgba(212, 165, 116, 0.4); }
-  
-  /* Hover et transitions */
   .row-hover:hover { background: rgba(212,165,116,0.04); }
   .tab-btn { transition: all .2s; }
   .btn-hover:hover { opacity: 0.7; }

@@ -6,6 +6,13 @@ $pageTitle = 'Accueil';
 
 $cities = getCities();
 
+$voyagesDispo = getVoyages();
+
+/* echo '<pre>';
+var_dump($voyagesDispo);
+echo '</pre>';
+die(); */
+
 $destinations = getDestinations();
 
 // top 6
@@ -111,39 +118,22 @@ include __DIR__ . '/templates/header.php';
     </div>
     <div class="flex gap-6 overflow-x-auto py-2 pb-6 -mx-6 px-6">
       <?php
-        $bgImages = [
-          'Antananarivo' => cityImg('antananarivo'),
-          'Toamasina'    => cityImg('toamasina'),
-          'Mahajanga'    => cityImg('mahajanga'),
-          'Fianarantsoa' => cityImg('antsirabe'),
-          'Toliara'      => cityImg('toliara'),
-          'Antsirabe'    => cityImg('antsirabe'),
-        ];
-
-        $popularRoutes = [
-          ['from'=>'Antananarivo','to'=>'Toamasina',   'duration'=>'5h30','price'=>25000],
-          ['from'=>'Antananarivo','to'=>'Mahajanga',   'duration'=>'9h00','price'=>38000],
-          ['from'=>'Antananarivo','to'=>'Antsirabe',   'duration'=>'2h30','price'=>12000],
-          ['from'=>'Antananarivo','to'=>'Fianarantsoa','duration'=>'6h00','price'=>28000],
-          ['from'=>'Toamasina',  'to'=>'Toliara',      'duration'=>'16h00','price'=>65000],
-          ['from'=>'Mahajanga',  'to'=>'Antsirabe',    'duration'=>'11h00','price'=>48000],
-        ];
-        foreach ($popularRoutes as $r):
-          $bg = $bgImages[$r['to']] ?? $bgImages['Antananarivo'];
+        foreach ($voyagesDispo as $r):
+          $bg = cityImg($r['to_city']);
       ?>
-      <a href="/search.php?from=<?= urlencode($r['from']) ?>&to=<?= urlencode($r['to']) ?>&passengers=1"
+      <a href="/search.php?from=<?= urlencode($r['from_city']) ?>&to=<?= urlencode($r['to_city']) ?>&passengers=1"
          class="relative rounded-2xl min-w-[300px] md:min-w-[380px] h-52 md:h-64 overflow-hidden shadow-xl transform hover:-translate-y-2 transition-all duration-300 bg-cover bg-center flex-shrink-0"
          style="background-image:linear-gradient(180deg,rgba(4,16,31,.12),rgba(4,10,20,.5)),url(<?= $bg ?>)">
         <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10"></div>
         <div class="relative z-10 h-full flex flex-col justify-between p-5">
           <div class="flex items-start justify-between">
             <div>
-              <div class="text-xs uppercase tracking-widest" style="color:rgba(255,255,255,0.1)"><?= $r['duration'] ?></div>
-              <h3 class="text-lg md:text-xl font-serif text-white font-semibold mt-1"><?= sanitize($r['from']) ?> → <?= sanitize($r['to']) ?></h3>
+              <div class="text-xs uppercase tracking-widest" style="color:rgba(236, 223, 223, 0.8)"><?= $r['date_depart_Voyage'] ?></div>
+              <h3 class="text-lg md:text-xl font-serif text-white font-semibold mt-1"><?= sanitize($r['from_city']) ?> → <?= sanitize($r['to_city']) ?></h3>
             </div>
             <div class="flex items-center gap-1.5 px-3 py-1 rounded-full"
                  style="background:rgba(239,168,38,0.18);border:1px solid rgba(239,168,38,0.3)">
-              <span class="text-sm font-semibold" style="color:var(--color-gold)"><?= formatPrice($r['price']) ?></span>
+              <span class="text-sm font-semibold" style="color:var(--color-gold)"><?= formatPrice(20000) ?></span>
             </div>
           </div>
           <div class="flex items-center justify-between">

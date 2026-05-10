@@ -6,6 +6,13 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/images.php';
 
+
+function debug($message){
+    echo '<pre>';
+    var_dump($message);
+    echo '</pre>';
+    die();
+}
 function sanitize(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -44,12 +51,4 @@ function is_post(): bool
 function formatPrice(float $p): string
 {
     return number_format($p, 0, ',', ' ') . ' Ar';
-}
-
-function formatDate(string $d): string
-{
-    $ts = strtotime($d);
-    if (!$ts) return $d;
-    $months = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
-    return date('d', $ts) . ' ' . $months[(int)date('m', $ts) - 1] . '. ' . date('Y', $ts);
 }

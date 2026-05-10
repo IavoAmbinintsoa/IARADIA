@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 require_once __DIR__ . '/config.php';
 
@@ -32,23 +34,6 @@ function getPDO(): PDO
     return $pdo;
 }
 
-function getChauffeur($cooperative = null) {
-    $pdo = getPDO();
-    $sql = "SELECT * FROM Chauffeur";
-    $params = [];
-
-    if ($cooperative) {
-        $sql .= " WHERE cooperative_Chauffeur = ?";
-        $params[] = $cooperative;
-    }
-
-    $sql .= " ORDER BY nom_Chauffeur ASC";
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
 function getVoyages($from = null, $to = null): array {
     $pdo = getPDO();
     $sql = 'SELECT v.id_Voyage, v.date_depart_Voyage, v.status_Voyage, 
@@ -136,6 +121,15 @@ function getDestinations(): array {
     return $stmt->fetchAll() ?: [];
 }
 
+function getVoyageStats(array $voyage): array {
+    $cap   = 32;
+    $id    = (int)($voyage['id_Voyage'] ?? 0);
+    $seats = getSeatsForVoyage($id, "libre");
+    $libre = is_array($seats) ? count($seats) : 0;
+    $taken = $cap - $libre;
+    return ['libre' => $libre, 'total' => $cap, 'taken' => $taken];
+}
+
 function searchVoyages(string $from, string $to, ?string $date = null): array {
     $pdo = getPDO();
     $sql = 'SELECT v.id_Voyage, v.date_depart_Voyage, v.status_Voyage,
@@ -145,17 +139,9 @@ function searchVoyages(string $from, string $to, ?string $date = null): array {
             JOIN Trajet t ON v.id_Trajet = t.id_Trajet
             JOIN Ville v1 ON t.id_Ville_depart = v1.id_Ville
             JOIN Ville v2 ON t.id_Ville_arrivee = v2.id_Ville
-            WHERE v1.nom_Ville = :from AND v2.nom_Ville = :to
-            AND v.status_Voyage = "planifie"';
+            WHERE v1.nom_Ville = :from AND v2.nom_Ville = :to';
 
     $params = ['from' => $from, 'to' => $to];
-
-    if ($date) {
-        $sql .= ' AND DATE(v.date_depart_Voyage) = :date';
-        $params['date'] = $date;
-    }
-
-    $sql .= ' ORDER BY v.date_depart_Voyage ASC';
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
@@ -175,49 +161,16 @@ function getTarifForVoyage(int $voyageId): ?array {
     return $stmt->fetch() ?: null;
 }
 
-function getSeatsForVoyage(int $voyageId): array {
+function getSeatsForVoyage(int $voyageId, string $coms): array {
     $pdo = getPDO();
     $stmt = $pdo->prepare(
         'SELECT id_Siege, statut_Siege, expirer_dans_Siege
-         FROM Siege WHERE id_Voyage = :voyageId ORDER BY id_Siege'
+         FROM Siege 
+         WHERE id_Voyage = :voyageId 
+         AND statut_Siege = :coms 
+         ORDER BY id_Siege'
     );
-    $stmt->execute(['voyageId' => $voyageId]);
+    $stmt->execute(['voyageId' => $voyageId, 'coms' => $coms]);
     return $stmt->fetchAll() ?: [];
-}
-
-function createReservation(int $userId, int $voyageId, array $seatNums, float $totalPrice): int {
-    $pdo = getPDO();
-    $pdo->beginTransaction();
-
-    $tarif = getTarifForVoyage($voyageId);
-    if (!$tarif) {
-        throw new Exception('Cette voyage n\'est pas encore disponible');
-    }
-
-    $qrCode = 'IARADIA-' . $userId . '-' . $voyageId . '-' . uniqid();
-
-    $stmt = $pdo->prepare(
-        'INSERT INTO Reservation
-            (date_reservation_Reservation, total_prix_Reservation, statut_Reservation,
-            QR_code_Reservation, id_Tarif_segment)
-            VALUES (CURDATE(), :total, "en_attente", :qr, :tarif)'
-    );
-    $stmt->execute([
-        'total' => $totalPrice,
-        'qr'    => $qrCode,
-        'tarif' => $tarif['id_Tarif_segment'],
-    ]);
-    $reservationId = (int) $pdo->lastInsertId();
-
-    $ins = $pdo->prepare(
-        'INSERT INTO Siege (statut_Siege, id_Voyage, id_Reservation,numero)
-            VALUES ("reserve", :voyage, :resa,:numero)'
-    );
-    foreach ($seatNums as $num) {
-        $ins->execute(['voyage' => $voyageId, 'resa' => $reservationId, 'numero' => $num]);
-    }
-
-    $pdo->commit();
-    return $reservationId;
 }
 
